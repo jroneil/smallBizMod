@@ -1,4 +1,5 @@
 .git
+.m2repo/
 **/target
 **/node_modules
 **/.next

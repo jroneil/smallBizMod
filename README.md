@@ -10,24 +10,27 @@ Implemented:
 
 - `sbp-framework`: ordinary reusable Java JAR;
 - `sbp-module-customer`: reusable Customer JAR with create, retrieve, and list operations;
+- `sbp-module-contact`: reusable Contact JAR with create, retrieve, and list-by-customer operations;
 - Acme reference backend: executable Spring Boot application;
 - Acme Customer profile extension with customer-owned persistence;
-- reusable SBP frontend baseline with Customer list, create, and detail flows;
-- independent Acme frontend with customer-owned branding and service profile editing;
-- PostgreSQL migrations for both generic Customer and Acme profile data;
-- Docker-compatible and Podman-oriented local deployment.
+- customer-owned demo security (HTTP Basic) proving the FR-09 security boundary;
+- reusable SBP frontend baseline with Customer and Contact flows;
+- independent Acme frontend with customer-owned branding, service profile editing, Contacts, and sign-in;
+- PostgreSQL migrations for generic Customer, generic Contact, and Acme profile data;
+- Docker-compatible and Podman-oriented local deployment including the frontend container.
 
 Not implemented yet:
 
-- Contact, Job, or Document modules;
-- production security policy or cloud deployment.
+- Job or Document modules;
+- production security policy (the current security is a development/demo boundary) or cloud deployment.
 
 ## Repository structure
 
 ```text
 backend/sbp/
 ├── sbp-framework/
-└── sbp-module-customer/
+├── sbp-module-customer/
+└── sbp-module-contact/
 
 frontend/sbp-ui/              reusable Next.js baseline/template
 
@@ -81,23 +84,25 @@ cp .env.example .env
 docker compose up --build -d
 ```
 
-From the repository root, inspect the running services and backend logs with:
+From the repository root, inspect the running services and logs with:
 
 ```bash
 docker compose -f reference/acme/deployment/compose.yaml ps
 docker compose -f reference/acme/deployment/compose.yaml logs -f backend
+docker compose -f reference/acme/deployment/compose.yaml logs -f frontend
 ```
 
-The backend is available at `http://localhost:8080`. PostgreSQL remains internal to the Compose network, and Flyway applies:
+The frontend is available at `http://localhost:3000` and the backend at `http://localhost:8080`. PostgreSQL remains internal to the Compose network, and Flyway applies:
 
 ```text
 V1__create_sbp_customer.sql
 V2__create_acme_customer_profile.sql
+V3__create_sbp_contact.sql
 ```
 
-Detailed API, restart, persistence, shutdown, and reset instructions are in the [Acme deployment guide](reference/acme/deployment/README.md).
+Sign in with the demo credentials from `.env` (`ACME_DEMO_USER` / `ACME_DEMO_PASSWORD`; defaults `demo` / `demo-local-development`). Detailed API, security, restart, persistence, shutdown, and reset instructions are in the [Acme deployment guide](reference/acme/deployment/README.md).
 
-The Acme frontend is deliberately not containerized in this slice. With the backend environment running, start it separately:
+For frontend-only development against a running backend, the Acme frontend can still be started separately:
 
 ```bash
 cd reference/acme/frontend
@@ -137,12 +142,23 @@ The same verification commands apply in `reference/acme/frontend`.
 
 ## API overview
 
+All `/api/**` endpoints require the customer-owned demo authentication.
+
 Generic Customer capability:
 
 ```text
 POST /api/customers
 GET  /api/customers
 GET  /api/customers/{customerId}
+```
+
+Generic Contact capability:
+
+```text
+POST /api/contacts
+GET  /api/contacts
+GET  /api/contacts?customerId={customerId}
+GET  /api/contacts/{contactId}
 ```
 
 Customer-owned Acme extension:
@@ -152,7 +168,7 @@ PUT  /api/acme/customers/{customerId}/profile
 GET  /api/acme/customers/{customerId}
 ```
 
-The Acme combined view is composed through the public Customer API and stable Customer identifier. Acme does not access Customer persistence internals or add columns to `sbp_customer`.
+The Acme combined view is composed through the public Customer API and stable Customer identifier. Acme does not access Customer persistence internals or add columns to `sbp_customer`. Contacts reference a customer by stable `customerId` and are composed with Customer at the application layer rather than through a cross-module foreign key.
 
 ## Architecture boundaries
 
@@ -168,5 +184,9 @@ The Acme combined view is composed through the public Customer API and stable Cu
 - [Product requirements](doc/SBP_PRD_Template_v0_4_Baseline.docx)
 - [Technical Architecture v0.1](doc/architecture/TECHNICAL-ARCHITECTURE-v0.1.md)
 - [Implementation Plan v0.1](doc/IMPLEMENTATION-PLAN-v0.1.md)
+- [ADR-001: Backend artifact and repository topology](doc/architecture/adr/ADR-001-backend-artifact-topology.md)
 - [ADR-002: Spring module assembly](doc/architecture/adr/ADR-002-spring-module-assembly.md)
 - [ADR-003: Persistence and Flyway ownership](doc/architecture/adr/ADR-003-persistence-and-flyway.md)
+- [ADR-004: First proof module and reference scenario](doc/architecture/adr/ADR-004-first-proof-module-and-reference-scenario.md)
+- [ADR-005: Reference security boundary](doc/architecture/adr/ADR-005-reference-security-boundary.md)
+- [ADR-006: Contact module and migration coordination](doc/architecture/adr/ADR-006-contact-module-and-migration-coordination.md)

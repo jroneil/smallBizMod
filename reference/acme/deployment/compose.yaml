@@ -24,11 +24,24 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${ACME_DB_NAME:-acme}
       SPRING_DATASOURCE_USERNAME: ${ACME_DB_USER:-acme}
       SPRING_DATASOURCE_PASSWORD: ${ACME_DB_PASSWORD:-acme-local-development}
+      ACME_DEMO_USER: ${ACME_DEMO_USER:-demo}
+      ACME_DEMO_PASSWORD: ${ACME_DEMO_PASSWORD:-demo-local-development}
     depends_on:
       postgres:
         condition: service_healthy
     ports:
       - "${ACME_BACKEND_PORT:-8080}:8080"
+
+  frontend:
+    build:
+      context: ../../..
+      dockerfile: reference/acme/frontend/Containerfile
+    environment:
+      SBP_API_URL: http://backend:8080
+    depends_on:
+      - backend
+    ports:
+      - "${ACME_FRONTEND_PORT:-3000}:3000"
 
 volumes:
   acme-postgres-data:

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AcmeProfileForm } from "@/components/acme-profile-form";
+import { ContactsPanel } from "@/components/contacts-panel";
 import { customerApi, type Customer } from "@/lib/api";
 
 export function CustomerDetail({ customerId }: { customerId: string }) {
@@ -128,6 +129,7 @@ export function CustomerDetail({ customerId }: { customerId: string }) {
           </div>
         </dl>
       </section>
+      <ContactsPanel customerId={customer.id} />
       <AcmeProfileForm customerId={customer.id} />
     </>
   );

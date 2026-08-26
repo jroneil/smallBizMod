@@ -2,11 +2,16 @@ package com.acmeco.reference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 
 import com.acmeco.reference.customer.api.AcmeCustomerView;
 import com.acmeco.reference.customer.api.SaveAcmeCustomerProfile;
 import com.acmeco.reference.customer.internal.application.AcmeCustomerProfileService;
+import com.oneilsoftware.sbp.module.contact.api.Contact;
+import com.oneilsoftware.sbp.module.contact.api.ContactOperations;
+import com.oneilsoftware.sbp.module.contact.api.CreateContact;
 import com.oneilsoftware.sbp.module.customer.api.CreateCustomer;
 import com.oneilsoftware.sbp.module.customer.api.Customer;
 import com.oneilsoftware.sbp.module.customer.api.CustomerOperations;
@@ -43,6 +48,9 @@ class AcmeReferenceApplicationTests {
 	private AcmeCustomerProfileService profileService;
 
 	@Autowired
+	private ContactOperations contactOperations;
+
+	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
 	@LocalServerPort
@@ -56,7 +64,7 @@ class AcmeReferenceApplicationTests {
 	}
 
 	@Test
-	void customerAndAcmeMigrationsApplyWithoutChangingCustomerTable() {
+	void moduleAndAcmeMigrationsApplyWithoutChangingCustomerTable() {
 		List<String> migrationScripts = jdbcTemplate.queryForList(
 				"select script from flyway_schema_history order by installed_rank",
 				String.class);
@@ -69,10 +77,14 @@ class AcmeReferenceApplicationTests {
 
 		assertThat(migrationScripts).containsExactly(
 				"V1__create_sbp_customer.sql",
-				"V2__create_acme_customer_profile.sql");
+				"V2__create_acme_customer_profile.sql",
+				"V3__create_sbp_contact.sql");
 		assertThat(jdbcTemplate.queryForObject(
 				"select to_regclass('public.acme_customer_profile')",
 				String.class)).isEqualTo("acme_customer_profile");
+		assertThat(jdbcTemplate.queryForObject(
+				"select to_regclass('public.sbp_contact')",
+				String.class)).isEqualTo("sbp_contact");
 		assertThat(customerColumns).containsExactly("id", "name", "status");
 	}
 
@@ -100,7 +112,7 @@ class AcmeReferenceApplicationTests {
 
 	@Test
 	void combinedRestApiCreatesProfileAndReturnsAcmeCustomerView() {
-		RestClient client = RestClient.create("http://localhost:" + serverPort);
+		RestClient client = authenticatedClient();
 		Customer customer = client.post()
 				.uri("/api/customers")
 				.body(new CreateCustomerRequest("Contoso Field Service"))
@@ -122,6 +134,56 @@ class AcmeReferenceApplicationTests {
 		assertThat(reloaded).isEqualTo(saveResponse.getBody());
 		assertThat(reloaded.customer()).isEqualTo(customer);
 		assertThat(reloaded.profile().serviceRegion()).isEqualTo("Coastal");
+	}
+
+	@Test
+	void customerAndContactComposeThroughStableCustomerIdentifier() {
+		Customer customer = customerOperations.create(new CreateCustomer("Lakeview Property Services"));
+
+		Contact contact = contactOperations.create(new CreateContact(
+				customer.id(),
+				"Casey Nolan",
+				"Property Manager",
+				"casey@lakeview.example",
+				"555-0177"));
+
+		assertThat(contact.customerId()).isEqualTo(customer.id());
+		assertThat(contactOperations.listByCustomer(customer.id())).containsExactly(contact);
+		assertThat(contactOperations.findById(contact.id())).contains(contact);
+
+		String persistedCustomerId = jdbcTemplate.queryForObject(
+				"select customer_id::text from sbp_contact where id = ?",
+				String.class,
+				contact.id());
+		assertThat(persistedCustomerId).isEqualTo(customer.id().toString());
+	}
+
+	@Test
+	void apiRejectsUnauthenticatedRequestsAndAcceptsDemoUser() {
+		RestClient anonymous = RestClient.create("http://localhost:" + serverPort);
+
+		int anonymousStatus = anonymous.get()
+				.uri("/api/customers")
+				.exchange((request, response) -> response.getStatusCode().value());
+		int authenticatedStatus = authenticatedClient().get()
+				.uri("/api/customers")
+				.exchange((request, response) -> response.getStatusCode().value());
+
+		assertThat(anonymousStatus).isEqualTo(HttpStatus.UNAUTHORIZED.value());
+		assertThat(authenticatedStatus).isEqualTo(HttpStatus.OK.value());
+	}
+
+	private RestClient authenticatedClient() {
+		return RestClient.builder()
+				.baseUrl("http://localhost:" + serverPort)
+				.defaultHeader("Authorization", basicAuth("demo", "demo-local-development"))
+				.build();
+	}
+
+	private static String basicAuth(String username, String password) {
+		String token = username + ":" + password;
+		return "Basic " + Base64.getEncoder()
+				.encodeToString(token.getBytes(StandardCharsets.UTF_8));
 	}
 
 	private record CreateCustomerRequest(String name) {

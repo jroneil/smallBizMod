@@ -1,9 +1,22 @@
+import { basicAuthHeader, clearCredentials } from "@/lib/auth";
+
 export type CustomerStatus = "ACTIVE" | "INACTIVE";
+export type ContactStatus = "ACTIVE" | "INACTIVE";
 
 export interface Customer {
   id: string;
   name: string;
   status: CustomerStatus;
+}
+
+export interface Contact {
+  id: string;
+  customerId: string;
+  fullName: string;
+  role: string | null;
+  email: string | null;
+  phone: string | null;
+  status: ContactStatus;
 }
 
 export class ApiError extends Error {
@@ -17,14 +30,22 @@ export class ApiError extends Error {
 }
 
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const authorization = basicAuthHeader();
+
   const response = await fetch(path, {
     ...init,
     headers: {
       Accept: "application/json",
       ...(init?.body ? { "Content-Type": "application/json" } : {}),
+      ...(authorization ? { Authorization: authorization } : {}),
       ...init?.headers,
     },
   });
+
+  if (response.status === 401) {
+    clearCredentials();
+    throw new ApiError("Your session has expired. Please sign in again.", 401);
+  }
 
   if (!response.ok) {
     let message = `The request failed (${response.status}).`;
@@ -54,5 +75,25 @@ export const customerApi = {
     apiRequest<Customer>("/api/customers", {
       method: "POST",
       body: JSON.stringify({ name }),
+    }),
+};
+
+export interface CreateContactInput {
+  customerId: string;
+  fullName: string;
+  role: string;
+  email: string;
+  phone: string;
+}
+
+export const contactApi = {
+  listByCustomer: (customerId: string) =>
+    apiRequest<Contact[]>(
+      `/api/contacts?customerId=${encodeURIComponent(customerId)}`,
+    ),
+  create: (input: CreateContactInput) =>
+    apiRequest<Contact>("/api/contacts", {
+      method: "POST",
+      body: JSON.stringify(input),
     }),
 };

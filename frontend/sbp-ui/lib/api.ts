@@ -1,9 +1,20 @@
 export type CustomerStatus = "ACTIVE" | "INACTIVE";
+export type ContactStatus = "ACTIVE" | "INACTIVE";
 
 export interface Customer {
   id: string;
   name: string;
   status: CustomerStatus;
+}
+
+export interface Contact {
+  id: string;
+  customerId: string;
+  fullName: string;
+  role: string | null;
+  email: string | null;
+  phone: string | null;
+  status: ContactStatus;
 }
 
 export class ApiError extends Error {
@@ -54,5 +65,25 @@ export const customerApi = {
     apiRequest<Customer>("/api/customers", {
       method: "POST",
       body: JSON.stringify({ name }),
+    }),
+};
+
+export interface CreateContactInput {
+  customerId: string;
+  fullName: string;
+  role: string;
+  email: string;
+  phone: string;
+}
+
+export const contactApi = {
+  listByCustomer: (customerId: string) =>
+    apiRequest<Contact[]>(
+      `/api/contacts?customerId=${encodeURIComponent(customerId)}`,
+    ),
+  create: (input: CreateContactInput) =>
+    apiRequest<Contact>("/api/contacts", {
+      method: "POST",
+      body: JSON.stringify(input),
     }),
 };

@@ -20,6 +20,7 @@
 		<java.version>21</java.version>
 		<sbp-framework.version>0.1.0-SNAPSHOT</sbp-framework.version>
 		<sbp-module-customer.version>0.1.0-SNAPSHOT</sbp-module-customer.version>
+		<sbp-module-contact.version>0.1.0-SNAPSHOT</sbp-module-contact.version>
 	</properties>
 
 	<dependencies>
@@ -43,6 +44,10 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>
@@ -82,7 +87,7 @@
 
 	<profiles>
 		<profile>
-			<id>with-customer</id>
+			<id>reference-modules</id>
 			<activation>
 				<activeByDefault>true</activeByDefault>
 			</activation>
@@ -92,10 +97,22 @@
 					<artifactId>sbp-module-customer</artifactId>
 					<version>${sbp-module-customer.version}</version>
 				</dependency>
+				<dependency>
+					<groupId>com.oneilsoftware</groupId>
+					<artifactId>sbp-module-contact</artifactId>
+					<version>${sbp-module-contact.version}</version>
+				</dependency>
 			</dependencies>
 		</profile>
 		<profile>
-			<id>without-customer</id>
+			<id>without-contact</id>
+			<dependencies>
+				<dependency>
+					<groupId>com.oneilsoftware</groupId>
+					<artifactId>sbp-module-customer</artifactId>
+					<version>${sbp-module-customer.version}</version>
+				</dependency>
+			</dependencies>
 		</profile>
 	</profiles>
 </project>

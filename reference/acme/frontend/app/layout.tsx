@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SignOutButton } from "@/components/sign-out-button";
 import { branding } from "@/lib/branding";
 import "./globals.css";
 
@@ -30,13 +31,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </span>
               </span>
             </Link>
-            <nav aria-label="Primary navigation">
+            <nav aria-label="Primary navigation" className="flex items-center gap-2">
               <Link
                 href="/customers"
                 className="rounded-lg bg-brand-soft px-4 py-2 text-sm font-semibold text-brand-strong transition-colors hover:bg-brand-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               >
                 Customers
               </Link>
+              <SignOutButton />
             </nav>
           </div>
         </header>
