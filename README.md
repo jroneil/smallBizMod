@@ -12,12 +12,13 @@ Implemented:
 - `sbp-module-customer`: reusable Customer JAR with create, retrieve, and list operations;
 - Acme reference backend: executable Spring Boot application;
 - Acme Customer profile extension with customer-owned persistence;
+- reusable SBP frontend baseline with Customer list, create, and detail flows;
+- independent Acme frontend with customer-owned branding and service profile editing;
 - PostgreSQL migrations for both generic Customer and Acme profile data;
 - Docker-compatible and Podman-oriented local deployment.
 
 Not implemented yet:
 
-- Acme reference frontend;
 - Contact, Job, or Document modules;
 - production security policy or cloud deployment.
 
@@ -28,10 +29,11 @@ backend/sbp/
 ├── sbp-framework/
 └── sbp-module-customer/
 
-frontend/sbp-ui/              Next.js baseline/template
+frontend/sbp-ui/              reusable Next.js baseline/template
 
 reference/acme/
 ├── backend/                  executable backend and Acme extension
+├── frontend/                 independent customer-owned Next.js application
 └── deployment/               Compose environment and run guide
 
 doc/
@@ -45,27 +47,45 @@ The Acme application is the deployable composition root. Reusable SBP JARs are n
 
 - Java 21 for local backend builds;
 - Podman with a Compose provider or Docker with Docker Compose;
-- Node.js only when working with the frontend baseline.
+- Node.js 20.9 or later for either frontend project.
 
 ## Run with containers
 
-From the repository root:
+From the repository root, create the untracked environment file:
 
 ```bash
-cd reference/acme/deployment
-cp .env.example .env
+cp reference/acme/deployment/.env.example reference/acme/deployment/.env
 ```
 
 Review the development-only values in `.env`, then start with either runtime:
 
 ```bash
-podman compose up --build -d
+podman compose \
+  -f reference/acme/deployment/compose.yaml \
+  up --build -d
 ```
 
 or:
 
 ```bash
+docker compose \
+  -f reference/acme/deployment/compose.yaml \
+  up --build -d
+```
+
+You can alternatively run Compose from its own directory:
+
+```bash
+cd reference/acme/deployment
+cp .env.example .env
 docker compose up --build -d
+```
+
+From the repository root, inspect the running services and backend logs with:
+
+```bash
+docker compose -f reference/acme/deployment/compose.yaml ps
+docker compose -f reference/acme/deployment/compose.yaml logs -f backend
 ```
 
 The backend is available at `http://localhost:8080`. PostgreSQL remains internal to the Compose network, and Flyway applies:
@@ -76,6 +96,16 @@ V2__create_acme_customer_profile.sql
 ```
 
 Detailed API, restart, persistence, shutdown, and reset instructions are in the [Acme deployment guide](reference/acme/deployment/README.md).
+
+The Acme frontend is deliberately not containerized in this slice. With the backend environment running, start it separately:
+
+```bash
+cd reference/acme/frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000`. Next.js proxies same-origin `/api/...` browser calls to `SBP_API_URL`, which defaults to `http://localhost:8080`. See the [Acme frontend guide](reference/acme/frontend/README.md) for the browser proof and configuration details.
 
 ## Build and test locally
 
@@ -92,6 +122,18 @@ Build and test the Acme reference backend:
 ```
 
 The PostgreSQL integration tests use Testcontainers and therefore require an available Docker-compatible container runtime.
+
+Verify the reusable frontend baseline:
+
+```bash
+cd frontend/sbp-ui
+npm install
+npm run typecheck
+npm run lint
+npm run build
+```
+
+The same verification commands apply in `reference/acme/frontend`.
 
 ## API overview
 
