@@ -4,13 +4,15 @@ This is the customer-owned Acme Service & Repair frontend. It was copied from th
 
 ## Run the browser proof
 
-First start the existing backend and PostgreSQL environment from the repository root:
+The complete reference application can run from the repository root:
 
 ```bash
 docker compose -f reference/acme/deployment/compose.yaml up --build -d
 ```
 
-Podman users can use the equivalent `podman compose` command. Then start this frontend in a separate terminal:
+Podman users can use the equivalent `podman compose` command. Open [http://localhost:3000](http://localhost:3000), enter the development/demo credentials from `reference/acme/deployment/.env` when prompted, create a customer, open its detail page, complete the service region and account notes, save, and reload the page to confirm persistence.
+
+For faster frontend development, start only the backend and PostgreSQL containers, then run this frontend in a separate terminal:
 
 ```bash
 cd reference/acme/frontend
@@ -18,7 +20,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Create a customer, open its detail page, complete the service region and account notes, save, and reload the page to confirm persistence.
+Open [http://localhost:3000](http://localhost:3000).
 
 ## API configuration
 

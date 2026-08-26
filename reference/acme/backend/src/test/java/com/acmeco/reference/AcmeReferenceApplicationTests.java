@@ -29,7 +29,11 @@ import org.testcontainers.utility.DockerImageName;
 @Testcontainers
 @SpringBootTest(
 		webEnvironment = WebEnvironment.RANDOM_PORT,
-		properties = "spring.jpa.hibernate.ddl-auto=validate")
+		properties = {
+				"spring.jpa.hibernate.ddl-auto=validate",
+				"acme.security.username=test-user",
+				"acme.security.password=test-password"
+		})
 class AcmeReferenceApplicationTests {
 
 	@Container
@@ -100,7 +104,7 @@ class AcmeReferenceApplicationTests {
 
 	@Test
 	void combinedRestApiCreatesProfileAndReturnsAcmeCustomerView() {
-		RestClient client = RestClient.create("http://localhost:" + serverPort);
+		RestClient client = authenticatedClient();
 		Customer customer = client.post()
 				.uri("/api/customers")
 				.body(new CreateCustomerRequest("Contoso Field Service"))
@@ -122,6 +126,26 @@ class AcmeReferenceApplicationTests {
 		assertThat(reloaded).isEqualTo(saveResponse.getBody());
 		assertThat(reloaded.customer()).isEqualTo(customer);
 		assertThat(reloaded.profile().serviceRegion()).isEqualTo("Coastal");
+	}
+
+	@Test
+	void restApiRejectsUnauthenticatedRequests() {
+		ResponseEntity<Void> response = RestClient.create("http://localhost:" + serverPort)
+				.get()
+				.uri("/api/customers")
+				.retrieve()
+				.onStatus(status -> status.value() == 401, (request, rejectedResponse) -> {
+				})
+				.toBodilessEntity();
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+	}
+
+	private RestClient authenticatedClient() {
+		return RestClient.builder()
+				.baseUrl("http://localhost:" + serverPort)
+				.defaultHeaders(headers -> headers.setBasicAuth("test-user", "test-password"))
+				.build();
 	}
 
 	private record CreateCustomerRequest(String name) {

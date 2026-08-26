@@ -2,6 +2,8 @@
 
 This Next.js application is the reusable SBP frontend baseline. It provides a small application shell and the generic Customer list, create, and detail flow. Customer projects copy the baseline and own their resulting frontend; they do not depend on this source tree at runtime.
 
+The current recorded baseline version is `0.1.0`, matching `package.json`. This is a source template version, not a published npm package version.
+
 ## Run locally
 
 Start an SBP-compatible backend on `http://localhost:8080`, then run:

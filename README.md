@@ -15,7 +15,8 @@ Implemented:
 - reusable SBP frontend baseline with Customer list, create, and detail flows;
 - independent Acme frontend with customer-owned branding and service profile editing;
 - PostgreSQL migrations for both generic Customer and Acme profile data;
-- Docker-compatible and Podman-oriented local deployment.
+- Docker-compatible and Podman-oriented full-stack local deployment.
+- customer-owned development/demo authentication protecting the Acme API.
 
 Not implemented yet:
 
@@ -88,16 +89,28 @@ docker compose -f reference/acme/deployment/compose.yaml ps
 docker compose -f reference/acme/deployment/compose.yaml logs -f backend
 ```
 
-The backend is available at `http://localhost:8080`. PostgreSQL remains internal to the Compose network, and Flyway applies:
+The frontend is available at `http://localhost:3000`, the backend at `http://localhost:8080`, and PostgreSQL remains internal to the Compose network. Flyway applies:
 
 ```text
 V1__create_sbp_customer.sql
 V2__create_acme_customer_profile.sql
 ```
 
+The browser prompts for the development/demo credentials configured by
+`ACME_SECURITY_USERNAME` and `ACME_SECURITY_PASSWORD` in the untracked `.env`
+file. If those variables are not overridden, the Compose defaults are:
+
+```text
+Username: acme
+Password: acme-local-development
+```
+
+Values in `reference/acme/deployment/.env` take precedence. These credentials
+are for local development only and are not a production identity design.
+
 Detailed API, restart, persistence, shutdown, and reset instructions are in the [Acme deployment guide](reference/acme/deployment/README.md).
 
-The Acme frontend is deliberately not containerized in this slice. With the backend environment running, start it separately:
+For faster frontend development, the Acme frontend can also run separately while the backend environment is running:
 
 ```bash
 cd reference/acme/frontend
@@ -108,6 +121,8 @@ npm run dev
 Open `http://localhost:3000`. Next.js proxies same-origin `/api/...` browser calls to `SBP_API_URL`, which defaults to `http://localhost:8080`. See the [Acme frontend guide](reference/acme/frontend/README.md) for the browser proof and configuration details.
 
 ## Build and test locally
+
+Backend artifact and package-boundary details are documented in the [SBP backend guide](backend/sbp/README.md).
 
 Build and install the reusable artifacts:
 
@@ -158,6 +173,7 @@ The Acme combined view is composed through the public Customer API and stable Cu
 
 - Backend reuse uses independently versioned Maven artifacts.
 - Customer applications own the executable Spring Boot entry point.
+- Customer applications own their Spring Security configuration and authorization policy.
 - Customer-specific data remains in customer-owned tables and packages.
 - Modules collaborate synchronously through explicit public contracts and identifiers.
 - The deployment remains one application process and one PostgreSQL database.
@@ -170,3 +186,5 @@ The Acme combined view is composed through the public Customer API and stable Cu
 - [Implementation Plan v0.1](doc/IMPLEMENTATION-PLAN-v0.1.md)
 - [ADR-002: Spring module assembly](doc/architecture/adr/ADR-002-spring-module-assembly.md)
 - [ADR-003: Persistence and Flyway ownership](doc/architecture/adr/ADR-003-persistence-and-flyway.md)
+- [ADR-004: First proof module and reference scenario](doc/architecture/adr/ADR-004-reference-scenario.md)
+- [ADR-005: Reference security boundary](doc/architecture/adr/ADR-005-reference-security-boundary.md)
