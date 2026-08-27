@@ -33,7 +33,7 @@ docker compose up --build -d
 docker compose logs -f backend
 ```
 
-The frontend is available at `http://localhost:${ACME_FRONTEND_PORT:-3000}` and the backend at `http://localhost:${ACME_BACKEND_PORT:-8080}`. The frontend proxies `/api/...` requests to the Compose service name `backend`; Spring Boot connects to the service name `postgres`. Flyway applies the SBP Customer V1, Acme profile V2, SBP Contact V3, and SBP User Maintenance V4/V5/V6 migrations during application startup.
+The frontend is available at `http://localhost:${ACME_FRONTEND_PORT:-3000}` and the backend at `http://localhost:${ACME_BACKEND_PORT:-8080}`. The frontend proxies `/api/...` requests to the Compose service name `backend`; Spring Boot connects to the service name `postgres`. Flyway applies the SBP Customer V1, Acme profile V2, SBP Contact V3, and SBP User Maintenance V4/V5/V6/V7 migrations during application startup.
 
 Open the frontend and sign in through the Acme form with the HTTP Basic credentials from the untracked `.env` file. The frontend retains the authorization value only in the current tab's `sessionStorage`, adds it to same-origin API requests, and clears it on sign-out or a backend 401. This reference policy is intentionally minimal and must be replaced for a real customer deployment.
 
@@ -135,6 +135,32 @@ curl -fsS \
 curl -fsS \
   -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
   "http://localhost:${ACME_BACKEND_PORT:-8080}/api/groups/<group-id>/members"
+```
+
+View and edit the authenticated user's own profile (self-service, mapped from the sign-in identity):
+
+```bash
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/me"
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X PUT "http://localhost:${ACME_BACKEND_PORT:-8080}/api/me" \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@acme.example","givenName":"Acme","familyName":"Administrator","phone":"555-0100"}'
+```
+
+Review the audit log (read-only, with filters):
+
+```bash
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/audit?action=USER_CREATED"
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/audit?actor=$ACME_SECURITY_USERNAME"
 ```
 
 Retrieve the combined view:
