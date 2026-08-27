@@ -42,7 +42,7 @@ docker compose up --build -d
 docker compose logs -f backend
 ```
 
-The frontend is available at `http://localhost:${ACME_FRONTEND_PORT:-3000}` and the backend at `http://localhost:${ACME_BACKEND_PORT:-8080}`. The frontend proxies `/api/...` requests to the Compose service name `backend`; Spring Boot connects to the service name `postgres`. Flyway applies the SBP Customer V1, Acme profile V2, SBP Contact V3, and SBP User Maintenance V4–V9 migrations during application startup.
+The frontend is available at `http://localhost:${ACME_FRONTEND_PORT:-3000}` and the backend at `http://localhost:${ACME_BACKEND_PORT:-8080}`. The frontend proxies `/api/...` requests to the Compose service name `backend`; Spring Boot connects to the service name `postgres`. Flyway applies the SBP Customer V1, Acme profile V2, SBP Contact V3, SBP User Maintenance V4–V10, group-role V13, and Acme local credential V11–V12 migrations during application startup.
 
 Open the frontend and sign in through the Acme form with the HTTP Basic credentials from the untracked `.env` file. The frontend retains the authorization value only in the current tab's `sessionStorage`, adds it to same-origin API requests, and clears it on sign-out or a backend 401. This reference policy is intentionally minimal and must be replaced for a real customer deployment.
 
@@ -146,6 +146,28 @@ curl -fsS \
   "http://localhost:${ACME_BACKEND_PORT:-8080}/api/groups/<group-id>/members"
 ```
 
+Assign a Role to a Group (members inherit it) and read effective roles:
+
+```bash
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/groups/<group-id>/roles/<role-id>"
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/groups/<group-id>/roles"
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/users/<user-id>/effective-roles"
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X DELETE "http://localhost:${ACME_BACKEND_PORT:-8080}/api/groups/<group-id>/roles/<role-id>"
+```
+
+`GET /api/users/<user-id>/roles` remains the directly assigned roles; `GET /api/users/<user-id>/effective-roles` is the deduplicated union of direct roles and roles inherited through group membership. Group→Role assignments are audited as `GROUP_ROLE_ASSIGNED` / `GROUP_ROLE_REMOVED`.
+
 View and edit the authenticated user's own profile (self-service, mapped from the sign-in identity):
 
 ```bash
@@ -159,6 +181,26 @@ curl -fsS \
   -H 'Content-Type: application/json' \
   -d '{"email":"admin@acme.example","givenName":"Acme","familyName":"Administrator","phone":"555-0100"}'
 ```
+
+Reset a User's local credential (administrator), optionally requiring a change at the next sign-in:
+
+```bash
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X PUT "http://localhost:${ACME_BACKEND_PORT:-8080}/api/acme/users/<user-id>/password" \
+  -H 'Content-Type: application/json' \
+  -d '{"newPassword":"temporary-pass-123","requireChange":true}'
+```
+
+Read the credential state (`hasCredential`, `locked`, `failedAttempts`, `passwordChangeRequired`):
+
+```bash
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/acme/users/<user-id>/credential"
+```
+
+When `requireChange` is true, that identity's ordinary APIs return 403 until the user changes their own password through `POST /api/me/password`; the reference frontend redirects the flagged session to a forced change-password screen. This is enforced server-side regardless of the client, and audit records never contain the password or its hash.
 
 Review the audit log (read-only, with filters):
 
