@@ -4,9 +4,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.Assert;
 
 @ConfigurationProperties("acme.security")
-record AcmeSecurityProperties(String username, String password) {
+public record AcmeSecurityProperties(String username, String password) {
 
-	AcmeSecurityProperties {
+	public AcmeSecurityProperties {
 		Assert.hasText(username, "acme.security.username must be configured");
 		Assert.hasText(password, "acme.security.password must be configured");
 	}

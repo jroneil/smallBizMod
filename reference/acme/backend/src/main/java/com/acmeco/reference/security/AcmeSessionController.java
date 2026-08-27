@@ -1,7 +1,7 @@
 package com.acmeco.reference.security;
 
-import java.security.Principal;
-
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,10 +11,14 @@ import org.springframework.web.bind.annotation.RestController;
 class AcmeSessionController {
 
 	@GetMapping
-	AcmeSession currentSession(Principal principal) {
-		return new AcmeSession(principal.getName());
+	AcmeSession currentSession() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		Object principal = authentication == null ? null : authentication.getPrincipal();
+		boolean passwordChangeRequired =
+				principal instanceof AcmeUserDetails userDetails && userDetails.isPasswordChangeRequired();
+		return new AcmeSession(authentication.getName(), passwordChangeRequired);
 	}
 
-	private record AcmeSession(String username) {
+	private record AcmeSession(String username, boolean passwordChangeRequired) {
 	}
 }

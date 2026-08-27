@@ -23,7 +23,7 @@ import { branding } from "@/lib/branding";
 interface AuthContextValue {
   checked: boolean;
   session: AuthSession | null;
-  signIn: (username: string, password: string) => Promise<void>;
+  signIn: (username: string, password: string) => Promise<AuthSession>;
   signOut: () => void;
 }
 
@@ -46,8 +46,17 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
   const session = useMemo(() => parseAuthSession(storedValue), [storedValue]);
 
   useEffect(() => {
-    if (checked && !session && pathname !== "/signin") {
+    if (!checked) return;
+    if (!session && pathname !== "/signin") {
       router.replace("/signin");
+      return;
+    }
+    if (session?.passwordChangeRequired && pathname !== "/change-password") {
+      router.replace("/change-password");
+      return;
+    }
+    if (session && !session.passwordChangeRequired && pathname === "/change-password") {
+      router.replace("/customers");
     }
   }, [checked, pathname, router, session]);
 
@@ -56,7 +65,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
       checked,
       session,
       signIn: async (username, password) => {
-        await authenticate(username, password);
+        return await authenticate(username, password);
       },
       signOut: () => {
         clearAuthSession();
@@ -66,7 +75,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
     [checked, router, session],
   );
 
-  if (pathname === "/signin") {
+  if (pathname === "/signin" || pathname === "/change-password") {
     return (
       <AuthContext.Provider value={contextValue}>
         <main className="min-h-screen">{children}</main>
@@ -112,14 +121,56 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
           <div className="flex items-center gap-2 sm:gap-4">
-            <nav aria-label="Primary navigation">
+            <nav aria-label="Primary navigation" className="flex items-center gap-1">
               <Link
                 href="/customers"
                 className="rounded-lg bg-brand-soft px-3 py-2 text-sm font-semibold text-brand-strong transition-colors hover:bg-brand-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:px-4"
               >
                 Customers
               </Link>
+              <Link
+                href="/jobs"
+                className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:px-4"
+              >
+                Work Orders
+              </Link>
+              <Link
+                href="/users"
+                className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:px-4"
+              >
+                Users
+              </Link>
+              <Link
+                href="/roles"
+                className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:px-4"
+              >
+                Roles
+              </Link>
+              <Link
+                href="/groups"
+                className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:px-4"
+              >
+                Groups
+              </Link>
+              <Link
+                href="/audit"
+                className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:px-4"
+              >
+                Audit
+              </Link>
+              <Link
+                href="/permissions"
+                className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:px-4"
+              >
+                Permissions
+              </Link>
             </nav>
+            <Link
+              href="/me"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:px-4"
+            >
+              My profile
+            </Link>
             <button
               type="button"
               onClick={contextValue.signOut}

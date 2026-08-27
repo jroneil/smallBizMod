@@ -18,9 +18,9 @@ export function AcmeProfileForm({ customerId }: { customerId: string }) {
 
     try {
       const result = await acmeCustomerApi.get(customerId);
-      setHasProfile(result !== null);
-      setServiceRegion(result?.profile.serviceRegion ?? "");
-      setAccountNotes(result?.profile.accountNotes ?? "");
+      setHasProfile(result?.profile != null);
+      setServiceRegion(result?.profile?.serviceRegion ?? "");
+      setAccountNotes(result?.profile?.accountNotes ?? "");
     } catch (reason) {
       setError(
         reason instanceof Error
@@ -39,9 +39,9 @@ export function AcmeProfileForm({ customerId }: { customerId: string }) {
       .get(customerId)
       .then((result) => {
         if (cancelled) return;
-        setHasProfile(result !== null);
-        setServiceRegion(result?.profile.serviceRegion ?? "");
-        setAccountNotes(result?.profile.accountNotes ?? "");
+        setHasProfile(result?.profile != null);
+        setServiceRegion(result?.profile?.serviceRegion ?? "");
+        setAccountNotes(result?.profile?.accountNotes ?? "");
       })
       .catch((reason: unknown) => {
         if (!cancelled) {
@@ -80,9 +80,9 @@ export function AcmeProfileForm({ customerId }: { customerId: string }) {
         serviceRegion: normalizedRegion,
         accountNotes: accountNotes.trim(),
       });
-      setServiceRegion(result.profile.serviceRegion);
-      setAccountNotes(result.profile.accountNotes ?? "");
-      setHasProfile(true);
+      setServiceRegion(result.profile?.serviceRegion ?? "");
+      setAccountNotes(result.profile?.accountNotes ?? "");
+      setHasProfile(result.profile != null);
       setSaved(true);
     } catch (reason) {
       setError(

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AcmeProfileForm } from "@/components/acme-profile-form";
 import { ContactsPanel } from "@/components/contacts-panel";
+import { DocumentsPanel } from "@/components/documents-panel";
+import { JobsPanel } from "@/components/jobs-panel";
 import { customerApi, type Customer } from "@/lib/api";
 
 export function CustomerDetail({ customerId }: { customerId: string }) {
@@ -130,6 +132,8 @@ export function CustomerDetail({ customerId }: { customerId: string }) {
         </dl>
       </section>
       <ContactsPanel customerId={customer.id} />
+      <JobsPanel customerId={customer.id} />
+      <DocumentsPanel ownerType="CUSTOMER" ownerId={customer.id} />
       <AcmeProfileForm customerId={customer.id} />
     </>
   );

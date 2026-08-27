@@ -21,6 +21,9 @@
 		<sbp-framework.version>0.1.0-SNAPSHOT</sbp-framework.version>
 		<sbp-module-customer.version>0.1.0-SNAPSHOT</sbp-module-customer.version>
 		<sbp-module-contact.version>0.1.0-SNAPSHOT</sbp-module-contact.version>
+		<sbp-module-user-maintenance.version>0.1.0-SNAPSHOT</sbp-module-user-maintenance.version>
+		<sbp-module-job.version>0.1.0-SNAPSHOT</sbp-module-job.version>
+		<sbp-module-document.version>0.1.0-SNAPSHOT</sbp-module-document.version>
 	</properties>
 
 	<dependencies>
@@ -106,6 +109,54 @@
 		</profile>
 		<profile>
 			<id>without-contact</id>
+		</profile>
+		<profile>
+			<id>with-user-maintenance</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>com.oneilsoftware</groupId>
+					<artifactId>sbp-module-user-maintenance</artifactId>
+					<version>${sbp-module-user-maintenance.version}</version>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>without-user-maintenance</id>
+		</profile>
+		<profile>
+			<id>with-job</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>com.oneilsoftware</groupId>
+					<artifactId>sbp-module-job</artifactId>
+					<version>${sbp-module-job.version}</version>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>without-job</id>
+		</profile>
+		<profile>
+			<id>with-document</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>com.oneilsoftware</groupId>
+					<artifactId>sbp-module-document</artifactId>
+					<version>${sbp-module-document.version}</version>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>without-document</id>
 		</profile>
 	</profiles>
 </project>

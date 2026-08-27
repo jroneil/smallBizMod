@@ -6,6 +6,7 @@ const AUTH_CHANGE_EVENT = "acme-reference-auth-change";
 export interface AuthSession {
   username: string;
   authorization: string;
+  passwordChangeRequired: boolean;
 }
 
 export class InvalidCredentialsError extends Error {
@@ -38,6 +39,7 @@ export function parseAuthSession(value: string | null): AuthSession | null {
       return {
         username: parsed.username,
         authorization: parsed.authorization,
+        passwordChangeRequired: parsed.passwordChangeRequired === true,
       };
     }
   } catch {
@@ -84,12 +86,19 @@ export async function authenticate(
     throw new Error(`Sign in is temporarily unavailable (${response.status}).`);
   }
 
-  const authenticated = (await response.json()) as { username?: string };
+  const authenticated = (await response.json()) as {
+    username?: string;
+    passwordChangeRequired?: boolean;
+  };
   if (!authenticated.username) {
     throw new Error("Sign in returned an invalid response.");
   }
 
-  const session = { username: authenticated.username, authorization };
+  const session = {
+    username: authenticated.username,
+    authorization,
+    passwordChangeRequired: authenticated.passwordChangeRequired === true,
+  };
   window.sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
   window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
   return session;

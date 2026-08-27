@@ -24,8 +24,8 @@ export default function SignInPage() {
     setError(null);
 
     try {
-      await signIn(username.trim(), password);
-      router.replace("/customers");
+      const session = await signIn(username.trim(), password);
+      router.replace(session.passwordChangeRequired ? "/change-password" : "/customers");
     } catch (reason) {
       setError(
         reason instanceof InvalidCredentialsError

@@ -5,12 +5,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(AcmeSecurityProperties.class)
@@ -22,18 +21,14 @@ class AcmeSecurityConfiguration {
 				.authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
 				.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(
 						(request, response, exception) -> response.sendError(401)))
-				.csrf(AbstractHttpConfigurer::disable);
+				.csrf(AbstractHttpConfigurer::disable)
+				.addFilterAfter(new AcmePasswordChangeRequiredFilter(), BasicAuthenticationFilter.class);
 		return http.build();
 	}
 
 	@Bean
-	UserDetailsService acmeUserDetailsService(
-			AcmeSecurityProperties properties,
-			PasswordEncoder passwordEncoder) {
-		return new InMemoryUserDetailsManager(User.withUsername(properties.username())
-				.password(passwordEncoder.encode(properties.password()))
-				.roles("USER")
-				.build());
+	UserDetailsService acmeUserDetailsService(AcmeCredentialService credentialService) {
+		return credentialService::loadUserByUsername;
 	}
 
 	@Bean

@@ -21,11 +21,17 @@
 		<module>sbp-framework</module>
 		<module>sbp-module-customer</module>
 		<module>sbp-module-contact</module>
+		<module>sbp-module-user-maintenance</module>
+		<module>sbp-module-job</module>
+		<module>sbp-module-document</module>
 	</modules>
 
 	<properties>
 		<java.version>21</java.version>
 		<sbp-framework.version>0.1.0-SNAPSHOT</sbp-framework.version>
 		<sbp-module-customer.version>0.1.0-SNAPSHOT</sbp-module-customer.version>
+		<sbp-module-user-maintenance.version>0.1.0-SNAPSHOT</sbp-module-user-maintenance.version>
+		<sbp-module-job.version>0.1.0-SNAPSHOT</sbp-module-job.version>
+		<sbp-module-document.version>0.1.0-SNAPSHOT</sbp-module-document.version>
 	</properties>
 </project>

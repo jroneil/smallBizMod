@@ -36,9 +36,10 @@ public class AcmeCustomerProfileService {
 
 	@Transactional(readOnly = true)
 	public Optional<AcmeCustomerView> findByCustomerId(UUID customerId) {
+		// The customer exists but may have no Acme profile yet: return the view with a null
+		// profile (200) rather than 404, reserving 404 for an unknown customer id.
 		return customerOperations.findById(customerId)
-				.flatMap(customer -> profileRepository.findById(customerId)
-						.map(profile -> toView(customer, profile)));
+				.map(customer -> toView(customer, profileRepository.findById(customerId).orElse(null)));
 	}
 
 	private AcmeCustomerView save(Customer customer, SaveAcmeCustomerProfile command) {
@@ -51,10 +52,12 @@ public class AcmeCustomerProfileService {
 	private static AcmeCustomerView toView(
 			Customer customer,
 			AcmeCustomerProfileEntity entity) {
-		AcmeCustomerProfile profile = new AcmeCustomerProfile(
-				entity.getCustomerId(),
-				entity.getServiceRegion(),
-				entity.getAccountNotes());
+		AcmeCustomerProfile profile = entity == null
+				? null
+				: new AcmeCustomerProfile(
+						entity.getCustomerId(),
+						entity.getServiceRegion(),
+						entity.getAccountNotes());
 		return new AcmeCustomerView(customer, profile);
 	}
 }
