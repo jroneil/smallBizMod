@@ -6,6 +6,26 @@ export interface Customer {
   status: CustomerStatus;
 }
 
+export type ContactStatus = "ACTIVE" | "INACTIVE";
+
+export interface Contact {
+  id: string;
+  customerId: string;
+  fullName: string;
+  email: string | null;
+  phone: string | null;
+  roleTitle: string | null;
+  status: ContactStatus;
+}
+
+export interface CreateContactInput {
+  customerId: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  roleTitle: string;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -54,5 +74,17 @@ export const customerApi = {
     apiRequest<Customer>("/api/customers", {
       method: "POST",
       body: JSON.stringify({ name }),
+    }),
+};
+
+export const contactApi = {
+  listByCustomer: (customerId: string) =>
+    apiRequest<Contact[]>(`/api/customers/${encodeURIComponent(customerId)}/contacts`),
+  get: (contactId: string) =>
+    apiRequest<Contact>(`/api/contacts/${encodeURIComponent(contactId)}`),
+  create: (input: CreateContactInput) =>
+    apiRequest<Contact>("/api/contacts", {
+      method: "POST",
+      body: JSON.stringify(input),
     }),
 };

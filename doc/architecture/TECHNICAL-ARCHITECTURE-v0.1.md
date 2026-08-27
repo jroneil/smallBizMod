@@ -75,6 +75,7 @@ Initial artifact roles:
 |---|---|---|
 | `sbp-framework` | JAR | Minimal cross-cutting framework contracts and approved shared infrastructure |
 | `sbp-module-customer` | JAR | First proof business module |
+| `sbp-module-contact` | JAR | Reusable Contact capability required in the completed V1 baseline after the Customer proof |
 | future `sbp-module-*` | JAR | Additional approved reusable business capabilities |
 | customer/reference application | executable Spring Boot JAR / OCI image | Composition root, selected modules, customer policy, customer extensions, customer APIs |
 
@@ -577,11 +578,17 @@ It must:
 
 **Customer is the first proof module.**
 
-Contact is not required as a separate v1 proof module at this stage.
+Contact is not part of the first Customer proof slice. That is an implementation
+sequence decision only: Contact remains a required reusable capability in the
+completed V1 baseline.
 
-The Customer module may contain only the minimal generic contact-related data needed to prove the Customer capability.
+Contact represents a person associated with a Customer and is implemented as a
+separate reusable module after the Customer proof. Customer remains an
+organization/account-style baseline and does not absorb Contact fields.
 
-A separate Contact module should be created only when the product requirements or repeated implementation evidence justify an independently reusable Contact capability.
+The Acme Service Profile is customer-specific service/account information about
+a Customer. It does not represent a person and does not satisfy any part of the
+Contact baseline requirement.
 
 ## 20. Initial implementation scope
 
@@ -613,7 +620,8 @@ The first slice must prove:
 
 Not authorized in the first slice:
 
-- Contact as a separate module;
+- Contact as a separate module (sequencing only; Contact is required after the
+  first proof for the completed V1 baseline);
 - Job;
 - Document;
 - Inventory;
@@ -799,9 +807,9 @@ The merged architecture intentionally combines:
 - no-cross-schema-FK policy;
 - mandatory early BOM;
 - domain events as a standard initial contract element;
-- Contact as a required separate v1 module.
+- Contact as part of the first Customer proof slice.
 
-These remain deferred because the Customer proof module can answer them more cheaply and reliably than further architecture speculation.
+These remain deferred because the Customer proof module can answer them more cheaply and reliably than further architecture speculation. This deferral does not remove the PRD-required Contact module from the completed V1 baseline.
 
 ---
 

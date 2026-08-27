@@ -6,6 +6,7 @@ const apiUrl = (process.env.SBP_API_URL ?? "http://localhost:8080").replace(
 );
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   async rewrites() {
     return [
       {

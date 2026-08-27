@@ -1,0 +1,4 @@
+/.docker-config/
+/.m2repo/
+/.npm-cache/
+/reference/acme/e2e/node_modules/
