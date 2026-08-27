@@ -17,7 +17,7 @@ Implemented:
 - independent Acme frontend with customer-owned branding and service profile editing;
 - PostgreSQL migrations for Customer, Acme profile, and Contact data;
 - Docker-compatible and Podman-oriented full-stack local deployment.
-- customer-owned development/demo authentication protecting the Acme API.
+- customer-owned development/demo authentication with an Acme sign-in and sign-out experience.
 
 Not implemented yet:
 
@@ -99,9 +99,10 @@ V2__create_acme_customer_profile.sql
 V3__create_sbp_contact.sql
 ```
 
-The browser prompts for the development/demo credentials configured by
-`ACME_SECURITY_USERNAME` and `ACME_SECURITY_PASSWORD` in the untracked `.env`
-file. If those variables are not overridden, the Compose defaults are:
+Open `http://localhost:3000/signin` and use the development/demo credentials
+configured by `ACME_SECURITY_USERNAME` and `ACME_SECURITY_PASSWORD` in the
+untracked `.env` file. If those variables are not overridden, the Compose
+defaults are:
 
 ```text
 Username: acme
@@ -109,7 +110,10 @@ Password: acme-local-development
 ```
 
 Values in `reference/acme/deployment/.env` take precedence. These credentials
-are for local development only and are not a production identity design.
+are for local development only and are not a production identity design. The
+reference frontend keeps the resulting HTTP Basic authorization value in the
+current browser tab's `sessionStorage`; signing out or closing the tab removes
+that tab-scoped state. This deliberately simple mechanism is not production-safe.
 
 Detailed API, restart, persistence, shutdown, and reset instructions are in the [Acme deployment guide](reference/acme/deployment/README.md).
 
@@ -176,6 +180,12 @@ Customer-owned Acme extension:
 ```text
 PUT  /api/acme/customers/{customerId}/profile
 GET  /api/acme/customers/{customerId}
+```
+
+Acme development/demo authentication check:
+
+```text
+GET  /api/auth/session
 ```
 
 The Acme combined view is composed through the public Customer API and stable Customer identifier. Acme does not access Customer persistence internals or add columns to `sbp_customer`.

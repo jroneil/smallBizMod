@@ -3,7 +3,6 @@ package com.acmeco.reference.security;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.userdetails.User;
@@ -21,7 +20,8 @@ class AcmeSecurityConfiguration {
 	SecurityFilterChain acmeSecurityFilterChain(HttpSecurity http) throws Exception {
 		http
 				.authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
-				.httpBasic(Customizer.withDefaults())
+				.httpBasic(httpBasic -> httpBasic.authenticationEntryPoint(
+						(request, response, exception) -> response.sendError(401)))
 				.csrf(AbstractHttpConfigurer::disable);
 		return http.build();
 	}

@@ -167,6 +167,18 @@ class AcmeReferenceApplicationTests {
 				.toBodilessEntity();
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+		assertThat(response.getHeaders().get("WWW-Authenticate")).isNull();
+	}
+
+	@Test
+	void authenticatedSessionEndpointIdentifiesTheDemoUser() {
+		ResponseEntity<String> response = authenticatedClient().get()
+				.uri("/api/auth/session")
+				.retrieve()
+				.toEntity(String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(response.getBody()).isEqualTo("{\"username\":\"test-user\"}");
 	}
 
 	private RestClient authenticatedClient() {

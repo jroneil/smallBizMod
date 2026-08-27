@@ -1,3 +1,5 @@
+import { expireAuthSession, getAuthorizationHeader } from "@/lib/auth";
+
 export type CustomerStatus = "ACTIVE" | "INACTIVE";
 
 export interface Customer {
@@ -37,14 +39,18 @@ export class ApiError extends Error {
 }
 
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const authorization = getAuthorizationHeader();
   const response = await fetch(path, {
     ...init,
     headers: {
       Accept: "application/json",
       ...(init?.body ? { "Content-Type": "application/json" } : {}),
+      ...(authorization ? { Authorization: authorization } : {}),
       ...init?.headers,
     },
   });
+
+  if (response.status === 401) expireAuthSession();
 
   if (!response.ok) {
     let message = `The request failed (${response.status}).`;

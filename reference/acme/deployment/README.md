@@ -35,7 +35,7 @@ docker compose logs -f backend
 
 The frontend is available at `http://localhost:${ACME_FRONTEND_PORT:-3000}` and the backend at `http://localhost:${ACME_BACKEND_PORT:-8080}`. The frontend proxies `/api/...` requests to the Compose service name `backend`; Spring Boot connects to the service name `postgres`. Flyway applies the SBP Customer V1, Acme profile V2, and SBP Contact V3 migrations during application startup.
 
-The browser requests the HTTP Basic credentials from the untracked `.env` file when it first loads Customer data. This reference policy is intentionally minimal and must be replaced for a real customer deployment.
+Open the frontend and sign in through the Acme form with the HTTP Basic credentials from the untracked `.env` file. The frontend retains the authorization value only in the current tab's `sessionStorage`, adds it to same-origin API requests, and clears it on sign-out or a backend 401. This reference policy is intentionally minimal and must be replaced for a real customer deployment.
 
 The frontend backend target is supplied while its image is built. Rebuild the frontend image if that internal target changes.
 
