@@ -17,6 +17,15 @@ cp .env.example .env
 
 The checked-in values are development examples only. Replace the passwords in `.env` as appropriate; do not commit real credentials. The `ACME_SECURITY_*` values configure Acme's development/demo HTTP Basic user.
 
+`SBP_USERMAINTENANCE_ENCRYPTION_KEY` and `SBP_USERMAINTENANCE_SEARCH_KEY` are required and must be **different** Base64-encoded 256-bit (32-byte) keys. Generate them with:
+
+```bash
+openssl rand -base64 32
+openssl rand -base64 32
+```
+
+and set them in the untracked `.env`. They are never committed to source, committed configuration, or stored in the database. The encryption key protects the recoverable personal data; the separate search key produces the non-reversible blind-index search tokens.
+
 ## Start
 
 Podman:
@@ -33,7 +42,7 @@ docker compose up --build -d
 docker compose logs -f backend
 ```
 
-The frontend is available at `http://localhost:${ACME_FRONTEND_PORT:-3000}` and the backend at `http://localhost:${ACME_BACKEND_PORT:-8080}`. The frontend proxies `/api/...` requests to the Compose service name `backend`; Spring Boot connects to the service name `postgres`. Flyway applies the SBP Customer V1, Acme profile V2, SBP Contact V3, and SBP User Maintenance V4/V5/V6/V7 migrations during application startup.
+The frontend is available at `http://localhost:${ACME_FRONTEND_PORT:-3000}` and the backend at `http://localhost:${ACME_BACKEND_PORT:-8080}`. The frontend proxies `/api/...` requests to the Compose service name `backend`; Spring Boot connects to the service name `postgres`. Flyway applies the SBP Customer V1, Acme profile V2, SBP Contact V3, and SBP User Maintenance V4–V9 migrations during application startup.
 
 Open the frontend and sign in through the Acme form with the HTTP Basic credentials from the untracked `.env` file. The frontend retains the authorization value only in the current tab's `sessionStorage`, adds it to same-origin API requests, and clears it on sign-out or a backend 401. This reference policy is intentionally minimal and must be replaced for a real customer deployment.
 
