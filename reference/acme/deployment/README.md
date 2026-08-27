@@ -17,6 +17,15 @@ cp .env.example .env
 
 The checked-in values are development examples only. Replace the passwords in `.env` as appropriate; do not commit real credentials. The `ACME_SECURITY_*` values configure Acme's development/demo HTTP Basic user.
 
+`SBP_USERMAINTENANCE_ENCRYPTION_KEY` and `SBP_USERMAINTENANCE_SEARCH_KEY` are required and must be **different** Base64-encoded 256-bit (32-byte) keys. Generate them with:
+
+```bash
+openssl rand -base64 32
+openssl rand -base64 32
+```
+
+and set them in the untracked `.env`. They are never committed to source, committed configuration, or stored in the database. The encryption key protects the recoverable personal data; the separate search key produces the non-reversible blind-index search tokens.
+
 ## Start
 
 Podman:
@@ -33,7 +42,7 @@ docker compose up --build -d
 docker compose logs -f backend
 ```
 
-The frontend is available at `http://localhost:${ACME_FRONTEND_PORT:-3000}` and the backend at `http://localhost:${ACME_BACKEND_PORT:-8080}`. The frontend proxies `/api/...` requests to the Compose service name `backend`; Spring Boot connects to the service name `postgres`. Flyway applies the SBP Customer V1, Acme profile V2, and SBP Contact V3 migrations during application startup.
+The frontend is available at `http://localhost:${ACME_FRONTEND_PORT:-3000}` and the backend at `http://localhost:${ACME_BACKEND_PORT:-8080}`. The frontend proxies `/api/...` requests to the Compose service name `backend`; Spring Boot connects to the service name `postgres`. Flyway applies the SBP Customer V1, Acme profile V2, SBP Contact V3, SBP User Maintenance V4–V10, group-role V13, and Acme local credential V11–V12 migrations during application startup.
 
 Open the frontend and sign in through the Acme form with the HTTP Basic credentials from the untracked `.env` file. The frontend retains the authorization value only in the current tab's `sessionStorage`, adds it to same-origin API requests, and clears it on sign-out or a backend 401. This reference policy is intentionally minimal and must be replaced for a real customer deployment.
 
@@ -81,6 +90,128 @@ curl -fsS \
   -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/contacts" \
   -H 'Content-Type: application/json' \
   -d "{\"customerId\":\"$customer_id\",\"fullName\":\"Jordan Lee\",\"email\":\"jordan@example.com\",\"phone\":\"555-0104\",\"roleTitle\":\"Operations Manager\"}"
+```
+
+Create a reusable User and exercise its lifecycle:
+
+```bash
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/users" \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"acme.admin","email":"admin@acme.example","givenName":"Acme","familyName":"Admin","phone":"555-0100"}'
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/users?query=admin"
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/users/<user-id>/deactivate"
+```
+
+Create a Role and assign it to a User:
+
+```bash
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/roles" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Manager","description":"Oversees daily work"}'
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/users/<user-id>/roles/<role-id>"
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/users/<user-id>/roles"
+```
+
+Create a Group and assign a User to it:
+
+```bash
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/groups" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Field Crew","description":"Field service team"}'
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/users/<user-id>/groups/<group-id>"
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/groups/<group-id>/members"
+```
+
+Assign a Role to a Group (members inherit it) and read effective roles:
+
+```bash
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/groups/<group-id>/roles/<role-id>"
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/groups/<group-id>/roles"
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/users/<user-id>/effective-roles"
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X DELETE "http://localhost:${ACME_BACKEND_PORT:-8080}/api/groups/<group-id>/roles/<role-id>"
+```
+
+`GET /api/users/<user-id>/roles` remains the directly assigned roles; `GET /api/users/<user-id>/effective-roles` is the deduplicated union of direct roles and roles inherited through group membership. Group→Role assignments are audited as `GROUP_ROLE_ASSIGNED` / `GROUP_ROLE_REMOVED`.
+
+View and edit the authenticated user's own profile (self-service, mapped from the sign-in identity):
+
+```bash
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/me"
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X PUT "http://localhost:${ACME_BACKEND_PORT:-8080}/api/me" \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@acme.example","givenName":"Acme","familyName":"Administrator","phone":"555-0100"}'
+```
+
+Reset a User's local credential (administrator), optionally requiring a change at the next sign-in:
+
+```bash
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X PUT "http://localhost:${ACME_BACKEND_PORT:-8080}/api/acme/users/<user-id>/password" \
+  -H 'Content-Type: application/json' \
+  -d '{"newPassword":"temporary-pass-123","requireChange":true}'
+```
+
+Read the credential state (`hasCredential`, `locked`, `failedAttempts`, `passwordChangeRequired`):
+
+```bash
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/acme/users/<user-id>/credential"
+```
+
+When `requireChange` is true, that identity's ordinary APIs return 403 until the user changes their own password through `POST /api/me/password`; the reference frontend redirects the flagged session to a forced change-password screen. This is enforced server-side regardless of the client, and audit records never contain the password or its hash.
+
+Review the audit log (read-only, with filters):
+
+```bash
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/audit?action=USER_CREATED"
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/audit?actor=$ACME_SECURITY_USERNAME"
 ```
 
 Retrieve the combined view:
