@@ -33,7 +33,7 @@ docker compose up --build -d
 docker compose logs -f backend
 ```
 
-The frontend is available at `http://localhost:${ACME_FRONTEND_PORT:-3000}` and the backend at `http://localhost:${ACME_BACKEND_PORT:-8080}`. The frontend proxies `/api/...` requests to the Compose service name `backend`; Spring Boot connects to the service name `postgres`. Flyway applies the SBP Customer V1, Acme profile V2, and SBP Contact V3 migrations during application startup.
+The frontend is available at `http://localhost:${ACME_FRONTEND_PORT:-3000}` and the backend at `http://localhost:${ACME_BACKEND_PORT:-8080}`. The frontend proxies `/api/...` requests to the Compose service name `backend`; Spring Boot connects to the service name `postgres`. Flyway applies the SBP Customer V1, Acme profile V2, SBP Contact V3, and SBP User Maintenance V4/V5/V6 migrations during application startup.
 
 Open the frontend and sign in through the Acme form with the HTTP Basic credentials from the untracked `.env` file. The frontend retains the authorization value only in the current tab's `sessionStorage`, adds it to same-origin API requests, and clears it on sign-out or a backend 401. This reference policy is intentionally minimal and must be replaced for a real customer deployment.
 
@@ -81,6 +81,60 @@ curl -fsS \
   -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/contacts" \
   -H 'Content-Type: application/json' \
   -d "{\"customerId\":\"$customer_id\",\"fullName\":\"Jordan Lee\",\"email\":\"jordan@example.com\",\"phone\":\"555-0104\",\"roleTitle\":\"Operations Manager\"}"
+```
+
+Create a reusable User and exercise its lifecycle:
+
+```bash
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/users" \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"acme.admin","email":"admin@acme.example","givenName":"Acme","familyName":"Admin","phone":"555-0100"}'
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/users?query=admin"
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/users/<user-id>/deactivate"
+```
+
+Create a Role and assign it to a User:
+
+```bash
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/roles" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Manager","description":"Oversees daily work"}'
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/users/<user-id>/roles/<role-id>"
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/users/<user-id>/roles"
+```
+
+Create a Group and assign a User to it:
+
+```bash
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/groups" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Field Crew","description":"Field service team"}'
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/users/<user-id>/groups/<group-id>"
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/groups/<group-id>/members"
 ```
 
 Retrieve the combined view:
