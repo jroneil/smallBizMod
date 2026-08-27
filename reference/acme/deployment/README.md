@@ -33,7 +33,7 @@ docker compose up --build -d
 docker compose logs -f backend
 ```
 
-The frontend is available at `http://localhost:${ACME_FRONTEND_PORT:-3000}` and the backend at `http://localhost:${ACME_BACKEND_PORT:-8080}`. The frontend proxies `/api/...` requests to the Compose service name `backend`; Spring Boot connects to the service name `postgres`. Flyway applies both the SBP Customer and Acme migrations during application startup.
+The frontend is available at `http://localhost:${ACME_FRONTEND_PORT:-3000}` and the backend at `http://localhost:${ACME_BACKEND_PORT:-8080}`. The frontend proxies `/api/...` requests to the Compose service name `backend`; Spring Boot connects to the service name `postgres`. Flyway applies the SBP Customer V1, Acme profile V2, and SBP Contact V3 migrations during application startup.
 
 The browser requests the HTTP Basic credentials from the untracked `.env` file when it first loads Customer data. This reference policy is intentionally minimal and must be replaced for a real customer deployment.
 
@@ -71,6 +71,16 @@ curl -fsS \
   -X PUT "http://localhost:${ACME_BACKEND_PORT:-8080}/api/acme/customers/$customer_id/profile" \
   -H 'Content-Type: application/json' \
   -d '{"serviceRegion":"Coastal","accountNotes":"Gate code is on file"}'
+```
+
+Add a reusable Contact associated with the Customer:
+
+```bash
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/contacts" \
+  -H 'Content-Type: application/json' \
+  -d "{\"customerId\":\"$customer_id\",\"fullName\":\"Jordan Lee\",\"email\":\"jordan@example.com\",\"phone\":\"555-0104\",\"roleTitle\":\"Operations Manager\"}"
 ```
 
 Retrieve the combined view:

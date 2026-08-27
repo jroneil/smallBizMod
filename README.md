@@ -10,17 +10,18 @@ Implemented:
 
 - `sbp-framework`: ordinary reusable Java JAR;
 - `sbp-module-customer`: reusable Customer JAR with create, retrieve, and list operations;
+- `sbp-module-contact`: reusable Contact JAR for people associated with Customers;
 - Acme reference backend: executable Spring Boot application;
 - Acme Customer profile extension with customer-owned persistence;
 - reusable SBP frontend baseline with Customer list, create, and detail flows;
 - independent Acme frontend with customer-owned branding and service profile editing;
-- PostgreSQL migrations for both generic Customer and Acme profile data;
+- PostgreSQL migrations for Customer, Acme profile, and Contact data;
 - Docker-compatible and Podman-oriented full-stack local deployment.
 - customer-owned development/demo authentication protecting the Acme API.
 
 Not implemented yet:
 
-- Contact, Job, or Document modules;
+- Job or Document modules;
 - production security policy or cloud deployment.
 
 ## Repository structure
@@ -28,7 +29,8 @@ Not implemented yet:
 ```text
 backend/sbp/
 ├── sbp-framework/
-└── sbp-module-customer/
+├── sbp-module-customer/
+└── sbp-module-contact/
 
 frontend/sbp-ui/              reusable Next.js baseline/template
 
@@ -94,6 +96,7 @@ The frontend is available at `http://localhost:3000`, the backend at `http://loc
 ```text
 V1__create_sbp_customer.sql
 V2__create_acme_customer_profile.sql
+V3__create_sbp_contact.sql
 ```
 
 The browser prompts for the development/demo credentials configured by
@@ -160,6 +163,14 @@ GET  /api/customers
 GET  /api/customers/{customerId}
 ```
 
+Generic Contact capability:
+
+```text
+POST /api/contacts
+GET  /api/contacts/{contactId}
+GET  /api/customers/{customerId}/contacts
+```
+
 Customer-owned Acme extension:
 
 ```text
@@ -188,3 +199,4 @@ The Acme combined view is composed through the public Customer API and stable Cu
 - [ADR-003: Persistence and Flyway ownership](doc/architecture/adr/ADR-003-persistence-and-flyway.md)
 - [ADR-004: First proof module and reference scenario](doc/architecture/adr/ADR-004-reference-scenario.md)
 - [ADR-005: Reference security boundary](doc/architecture/adr/ADR-005-reference-security-boundary.md)
+- [ADR-006: Contact module and migration ordering](doc/architecture/adr/ADR-006-contact-module-and-migration-ordering.md)

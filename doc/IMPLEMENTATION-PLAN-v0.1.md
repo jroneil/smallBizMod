@@ -64,13 +64,21 @@ The reference application is the primary architecture test.
 
 If the framework makes this flow harder than a normal Spring Boot + Next.js application should be, the framework shall be simplified.
 
+This target describes the first Customer proof, not the full V1 baseline.
+After that proof is accepted, the completed V1 baseline also requires the
+reusable Contact capability identified by the PRD. Contact represents a person
+associated with a Customer. It is distinct from the customer-owned Acme Service
+Profile.
+
 ---
 
 ## 3. Implementation rules
 
 1. Work one authorized slice at a time.
 2. Each slice must produce either visible functionality or remove a concrete blocker to visible functionality.
-3. Do not implement candidate modules until the first proof is complete.
+3. Do not implement additional modules until the first proof is complete.
+   After that proof, implement the PRD-required Contact baseline before calling
+   V1 complete; other candidate modules still require separate authorization.
 4. Do not add extension points without a demonstrated consumer.
 5. Do not add infrastructure merely because it may be useful later.
 6. Do not add tests only to increase coverage metrics.
@@ -260,7 +268,8 @@ Exact domain shape should be decided during the slice, not overdesigned beforeha
 
 ### Avoid
 
-- generic contact model;
+- generic contact model in the Customer proof slice (Contact is implemented as
+  its own reusable module after the proof);
 - address framework;
 - custom-field framework;
 - event publishing;
@@ -513,6 +522,38 @@ Create the first internal SBP baseline that can serve as the starting point for 
 
 ---
 
+## Slice 10 — Required V1 Contact baseline
+
+### Objective
+
+Complete the PRD-required V1 business baseline after the Customer architecture
+proof by adding a small reusable Contact capability.
+
+### Domain boundary
+
+A Contact is a person associated with a Customer. It contains only generally
+useful person/contact information and a lifecycle status. The Acme Service
+Profile remains separate customer-owned service/account information.
+
+### Work
+
+- independently versioned `sbp-module-contact` JAR;
+- explicit dependency on the Customer public contract;
+- Contact-owned persistence and Flyway migration;
+- create, retrieve, and list-by-Customer public/REST operations;
+- basic reusable Contact UI on Customer detail;
+- copied Contact UI in Acme alongside the Service Profile;
+- focused module, omission, integration, and realistic browser verification.
+
+### Avoid
+
+- generic CRM, search, address, workflow, or custom-field frameworks;
+- Customer persistence internals or direct Customer-table access;
+- Acme policy in the reusable Contact module;
+- interpreting the Acme Service Profile as Contact data.
+
+---
+
 # 6. Testing strategy
 
 Testing follows implementation rather than driving the product.
@@ -526,6 +567,10 @@ Use automated tests where failure would undermine the architecture:
 - Flyway builds a clean database;
 - customer extension persists separately;
 - optional Customer module can be omitted;
+- Contact persists, lists by Customer, and validates Customer existence through
+  the public Customer contract;
+- optional Contact can be omitted without breaking the remaining valid Acme
+  composition;
 - reference app integrates through public contracts;
 - frontend builds and the primary demo flow works.
 
@@ -584,6 +629,11 @@ Acme-specific UI and persistence work end-to-end.
 
 A clean clone can run the environment using documented Podman/Docker steps.
 
+### Demo 7
+
+The completed V1 reference application can add and reload a Contact person on a
+Customer while independently creating or editing the Acme Service Profile.
+
 These checkpoints matter more than accumulating infrastructure that cannot yet be shown.
 
 ---
@@ -617,11 +667,19 @@ Do not implement the following until the reference application demonstrates a ne
 - BOM unless version coordination becomes real;
 - frontend npm-package extraction.
 
+For Contact, this list is sequencing only. Once the Customer proof is accepted,
+Contact is authorized and required for completed V1. The remaining items stay
+deferred until their own requirements or evidence justify them.
+
 ---
 
 # 9. Promotion after proof
 
 After the first reference application works, evaluate the next capability from actual need.
+
+Contact is not an optional promotion decision in this step: the PRD already
+identifies it as part of the V1 baseline. This promotion rule governs later
+customer-specific behavior and other candidate capabilities.
 
 A feature becomes reusable only when:
 
@@ -690,4 +748,7 @@ This plan succeeds when SBP has produced one small, working, customer-style appl
 - enough tests to protect the meaningful boundaries;
 - and, most importantly, a visible application that is easier to build because SBP exists.
 
-Only after that proof should the platform expand.
+That condition completes the first architecture proof. Completed V1 additionally
+requires the reusable Contact module and basic Contact UI described in Slice 10,
+with Contact and the Acme Service Profile visible as separate concepts. Only
+after those outcomes should the platform expand to other modules.

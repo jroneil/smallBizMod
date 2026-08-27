@@ -1,6 +1,6 @@
 # SBP frontend baseline
 
-This Next.js application is the reusable SBP frontend baseline. It provides a small application shell and the generic Customer list, create, and detail flow. Customer projects copy the baseline and own their resulting frontend; they do not depend on this source tree at runtime.
+This Next.js application is the reusable SBP frontend baseline. It provides a small application shell, the generic Customer list/create/detail flow, and basic Contact list/create behavior on Customer detail. Customer projects copy the baseline and own their resulting frontend; they do not depend on this source tree at runtime.
 
 The current recorded baseline version is `0.1.0`, matching `package.json`. This is a source template version, not a published npm package version.
 
@@ -34,6 +34,6 @@ npm run build
 ## Copy-and-customize boundary
 
 - `lib/branding.ts` is the intentionally small branding seam.
-- `lib/api.ts` is the generic Customer API boundary.
+- `lib/api.ts` is the generic Customer and Contact API boundary.
 - `app/` and `components/` contain normal Next.js/React application code, not a package or plugin framework.
 - Customer-specific screens, API calls, and persistence concepts belong in the copied customer application first.

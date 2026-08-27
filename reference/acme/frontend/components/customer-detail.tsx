@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AcmeProfileForm } from "@/components/acme-profile-form";
+import { ContactsPanel } from "@/components/contacts-panel";
 import { customerApi, type Customer } from "@/lib/api";
 
 export function CustomerDetail({ customerId }: { customerId: string }) {
@@ -106,7 +107,7 @@ export function CustomerDetail({ customerId }: { customerId: string }) {
         <div className="border-b border-slate-100 pb-5">
           <h2 className="text-lg font-bold text-slate-950">Customer information</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Contact record details used by the Acme team.
+            Core customer details shared across the application.
           </p>
         </div>
         <dl className="mt-6 grid gap-6 sm:grid-cols-2">
@@ -128,6 +129,7 @@ export function CustomerDetail({ customerId }: { customerId: string }) {
           </div>
         </dl>
       </section>
+      <ContactsPanel customerId={customer.id} />
       <AcmeProfileForm customerId={customer.id} />
     </>
   );

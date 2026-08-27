@@ -7,6 +7,9 @@ import java.util.List;
 import com.acmeco.reference.customer.api.AcmeCustomerView;
 import com.acmeco.reference.customer.api.SaveAcmeCustomerProfile;
 import com.acmeco.reference.customer.internal.application.AcmeCustomerProfileService;
+import com.oneilsoftware.sbp.module.contact.api.Contact;
+import com.oneilsoftware.sbp.module.contact.api.ContactOperations;
+import com.oneilsoftware.sbp.module.contact.api.CreateContact;
 import com.oneilsoftware.sbp.module.customer.api.CreateCustomer;
 import com.oneilsoftware.sbp.module.customer.api.Customer;
 import com.oneilsoftware.sbp.module.customer.api.CustomerOperations;
@@ -44,6 +47,9 @@ class AcmeReferenceApplicationTests {
 	private CustomerOperations customerOperations;
 
 	@Autowired
+	private ContactOperations contactOperations;
+
+	@Autowired
 	private AcmeCustomerProfileService profileService;
 
 	@Autowired
@@ -60,7 +66,7 @@ class AcmeReferenceApplicationTests {
 	}
 
 	@Test
-	void customerAndAcmeMigrationsApplyWithoutChangingCustomerTable() {
+	void customerAcmeAndContactMigrationsApplyWithoutChangingCustomerTable() {
 		List<String> migrationScripts = jdbcTemplate.queryForList(
 				"select script from flyway_schema_history order by installed_rank",
 				String.class);
@@ -73,11 +79,15 @@ class AcmeReferenceApplicationTests {
 
 		assertThat(migrationScripts).containsExactly(
 				"V1__create_sbp_customer.sql",
-				"V2__create_acme_customer_profile.sql");
+				"V2__create_acme_customer_profile.sql",
+				"V3__create_sbp_contact.sql");
 		assertThat(jdbcTemplate.queryForObject(
 				"select to_regclass('public.acme_customer_profile')",
 				String.class)).isEqualTo("acme_customer_profile");
 		assertThat(customerColumns).containsExactly("id", "name", "status");
+		assertThat(jdbcTemplate.queryForObject(
+				"select to_regclass('public.sbp_contact')",
+				String.class)).isEqualTo("sbp_contact");
 	}
 
 	@Test
@@ -126,6 +136,24 @@ class AcmeReferenceApplicationTests {
 		assertThat(reloaded).isEqualTo(saveResponse.getBody());
 		assertThat(reloaded.customer()).isEqualTo(customer);
 		assertThat(reloaded.profile().serviceRegion()).isEqualTo("Coastal");
+	}
+
+	@Test
+	void contactAndAcmeProfileRemainSeparateCustomerCompositions() {
+		Customer customer = customerOperations.create(new CreateCustomer("Tailspin Services"));
+		Contact contact = contactOperations.create(new CreateContact(
+				customer.id(),
+				"Jordan Lee",
+				"jordan@example.com",
+				"555-0104",
+				"Operations Manager"));
+		profileService.save(customer.id(), new SaveAcmeCustomerProfile(
+				"Western District",
+				"Quarterly service review"));
+
+		assertThat(contactOperations.listByCustomer(customer.id())).containsExactly(contact);
+		assertThat(profileService.findByCustomerId(customer.id()).orElseThrow().profile().serviceRegion())
+				.isEqualTo("Western District");
 	}
 
 	@Test

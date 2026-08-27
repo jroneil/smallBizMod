@@ -10,7 +10,7 @@ The complete reference application can run from the repository root:
 docker compose -f reference/acme/deployment/compose.yaml up --build -d
 ```
 
-Podman users can use the equivalent `podman compose` command. Open [http://localhost:3000](http://localhost:3000), enter the development/demo credentials from `reference/acme/deployment/.env` when prompted, create a customer, open its detail page, complete the service region and account notes, save, and reload the page to confirm persistence.
+Podman users can use the equivalent `podman compose` command. Open [http://localhost:3000](http://localhost:3000), enter the development/demo credentials from `reference/acme/deployment/.env` when prompted, create a customer, open its detail page, add a Contact, complete the separate service region and account notes, save, and reload the page to confirm persistence.
 
 For faster frontend development, start only the backend and PostgreSQL containers, then run this frontend in a separate terminal:
 
@@ -40,4 +40,4 @@ npm run lint
 npm run build
 ```
 
-The Acme-specific code is currently limited to branding in `lib/branding.ts`, the Acme API contract in `lib/acme-api.ts`, and the service profile form in `components/acme-profile-form.tsx`.
+The generic Customer and Contact UI was copied from the SBP baseline. Acme-specific code is limited to branding in `lib/branding.ts`, the Acme API contract in `lib/acme-api.ts`, and the separate service profile form in `components/acme-profile-form.tsx`.
