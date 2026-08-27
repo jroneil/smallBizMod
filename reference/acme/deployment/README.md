@@ -42,7 +42,7 @@ docker compose up --build -d
 docker compose logs -f backend
 ```
 
-The frontend is available at `http://localhost:${ACME_FRONTEND_PORT:-3000}` and the backend at `http://localhost:${ACME_BACKEND_PORT:-8080}`. The frontend proxies `/api/...` requests to the Compose service name `backend`; Spring Boot connects to the service name `postgres`. Flyway applies the SBP Customer V1, Acme profile V2, SBP Contact V3, SBP User Maintenance V4–V10, group-role V13, and Acme local credential V11–V12 migrations during application startup.
+The frontend is available at `http://localhost:${ACME_FRONTEND_PORT:-3000}` and the backend at `http://localhost:${ACME_BACKEND_PORT:-8080}`. The frontend proxies `/api/...` requests to the Compose service name `backend`; Spring Boot connects to the service name `postgres`. Flyway applies the SBP Customer V1, Acme profile V2, SBP Contact V3, SBP User Maintenance V4–V10, Acme local credential V11–V12, group-role V13, SBP Job V14–V15, and SBP Document V16–V18 migrations during application startup.
 
 Open the frontend and sign in through the Acme form with the HTTP Basic credentials from the untracked `.env` file. The frontend retains the authorization value only in the current tab's `sessionStorage`, adds it to same-origin API requests, and clears it on sign-out or a backend 401. This reference policy is intentionally minimal and must be replaced for a real customer deployment.
 
@@ -167,6 +167,50 @@ curl -fsS \
 ```
 
 `GET /api/users/<user-id>/roles` remains the directly assigned roles; `GET /api/users/<user-id>/effective-roles` is the deduplicated union of direct roles and roles inherited through group membership. Group→Role assignments are audited as `GROUP_ROLE_ASSIGNED` / `GROUP_ROLE_REMOVED`.
+
+Upload a Document to a Customer (multipart) and exercise the reusable Document workflow:
+
+```bash
+# Upload a file attached to the Customer (exactly one owner: CUSTOMER or JOB)
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X POST "http://localhost:${ACME_BACKEND_PORT:-8080}/api/documents" \
+  -F "file=@signed-contract.pdf" \
+  -F "ownerType=CUSTOMER" \
+  -F "ownerId=$customer_id"
+
+# List the Customer's Documents (paginated baseline contract)
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/documents?ownerType=CUSTOMER&ownerId=$customer_id&page=0&size=20"
+
+# Download the content (saved under its display name, attachment disposition)
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/documents/<document-id>/content" \
+  -o downloaded-contract.pdf
+
+# Rename, replace content in place, and delete (all audited)
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X PUT "http://localhost:${ACME_BACKEND_PORT:-8080}/api/documents/<document-id>" \
+  -H 'Content-Type: application/json' \
+  -d '{"displayName":"final-contract.pdf"}'
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X PUT "http://localhost:${ACME_BACKEND_PORT:-8080}/api/documents/<document-id>/content" \
+  -F "file=@final-contract.pdf"
+
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  -X DELETE "http://localhost:${ACME_BACKEND_PORT:-8080}/api/documents/<document-id>"
+
+# The audit history remains readable after deletion (actor is the authenticated user)
+curl -fsS \
+  -u "$ACME_SECURITY_USERNAME:$ACME_SECURITY_PASSWORD" \
+  "http://localhost:${ACME_BACKEND_PORT:-8080}/api/documents/<document-id>/audit-events"
+```
 
 View and edit the authenticated user's own profile (self-service, mapped from the sign-in identity):
 
